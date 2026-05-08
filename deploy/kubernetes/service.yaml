@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: s1ap-proxy
+  namespace: s1ap-proxy
+  labels:
+    app.kubernetes.io/name: s1ap-proxy
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: s1ap-proxy
+  ports:
+  - name: s1ap
+    port: 36412
+    targetPort: s1ap
+    protocol: SCTP
+  - name: http-api
+    port: 8080
+    targetPort: http-api
+    protocol: TCP
+---
+# Optional: NodePort service for external eNB access
+# Uncomment if your eNB is outside the cluster
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: s1ap-proxy-external
+#   namespace: s1ap-proxy
+#   labels:
+#     app.kubernetes.io/name: s1ap-proxy
+# spec:
+#   type: NodePort
+#   selector:
+#     app.kubernetes.io/name: s1ap-proxy
+#   ports:
+#   - name: s1ap
+#     port: 36412
+#     targetPort: s1ap
+#     protocol: SCTP
+#     nodePort: 36412  # Use same port for simplicity

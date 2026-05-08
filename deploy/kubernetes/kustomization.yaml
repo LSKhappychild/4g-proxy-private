@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: s1ap-proxy
+
+resources:
+- namespace.yaml
+- configmap.yaml
+- deployment.yaml
+- service.yaml
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+
+images:
+- name: s1ap-proxy
+  newName: YOUR_USERNAME/mme-proxy  # Replace with your Docker Hub username
+  newTag: latest

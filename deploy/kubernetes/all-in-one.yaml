@@ -1,0 +1,164 @@
+# S1AP Proxy - All-in-One Kubernetes Deployment
+#
+# This proxy sits between eNB and MME to inspect/delay/drop S1AP messages.
+#
+# Before deploying:
+#   1. Delete the existing MME NodePort: kubectl delete svc mme-s1ap-external -n open5gs
+#   2. Update the image name below with your Docker Hub username
+#
+# Deploy with: kubectl apply -f all-in-one.yaml
+# Delete with: kubectl delete -f all-in-one.yaml
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s1ap-proxy-config
+  namespace: open5gs
+  labels:
+    app.kubernetes.io/name: s1ap-proxy
+data:
+  # MME Backend Configuration (internal MME service)
+  MME_ADDRESS: "open-mme-s1ap.open5gs.svc.cluster.local"
+  MME_PORT: "36412"
+
+  # API Configuration
+  API_ENABLED: "true"
+  API_PORT: "8080"
+
+  # Delay Configuration (in milliseconds)
+  # Set to "0" to disable delay for a message type
+  DELAY_ATTACH_MS: "0"
+  DELAY_DETACH_MS: "0"
+  DELAY_TAU_MS: "0"
+  DELAY_SERVICE_REQUEST_MS: "0"
+  DELAY_UE_CONTEXT_RELEASE_MS: "0"
+  DELAY_PDN_CONNECTIVITY_MS: "0"
+  DELAY_HANDOVER_MS: "0"
+  # Handover-specific delays (take precedence over DELAY_HANDOVER_MS)
+  DELAY_HANDOVER_REQUIRED_MS: "0"   # Source eNB -> MME (initiates handover)
+  DELAY_HANDOVER_NOTIFY_MS: "0"     # Target eNB -> MME (UE arrived at target)
+  DELAY_RESET_MS: "0"
+  DELAY_PAGING_MS: "0"
+  DELAY_DEFAULT_MS: "0"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s1ap-proxy
+  namespace: open5gs
+  labels:
+    app.kubernetes.io/name: s1ap-proxy
+    app.kubernetes.io/component: proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: s1ap-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: s1ap-proxy
+        app.kubernetes.io/component: proxy
+    spec:
+      containers:
+      - name: s1ap-proxy
+        image: lskhappychild/mme-proxy:0.2  # <-- Change this to your Docker Hub image
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: s1ap
+          containerPort: 36412
+          protocol: SCTP
+        - name: http-api
+          containerPort: 8080
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: s1ap-proxy-config
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          # limits:
+          #   memory: "256Mi"
+          #   cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http-api
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http-api
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+
+---
+# Internal ClusterIP service for the proxy
+apiVersion: v1
+kind: Service
+metadata:
+  name: s1ap-proxy
+  namespace: open5gs
+  labels:
+    app.kubernetes.io/name: s1ap-proxy
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: s1ap-proxy
+  ports:
+  - name: s1ap
+    port: 36412
+    targetPort: s1ap
+    protocol: SCTP
+  - name: http-api
+    port: 8080
+    targetPort: http-api
+    protocol: TCP
+
+---
+# NodePort service to expose proxy to eNBs (replaces mme-s1ap-external)
+apiVersion: v1
+kind: Service
+metadata:
+  name: s1ap-proxy-external
+  namespace: open5gs
+  labels:
+    app.kubernetes.io/name: s1ap-proxy
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: s1ap-proxy
+  ports:
+  - name: s1ap
+    port: 36412
+    targetPort: s1ap
+    protocol: SCTP
+    nodePort: 36412
+
+---
+# NodePort for HTTP API (for external management)
+apiVersion: v1
+kind: Service
+metadata:
+  name: s1ap-proxy-api-external
+  namespace: open5gs
+  labels:
+    app.kubernetes.io/name: s1ap-proxy
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: s1ap-proxy
+  ports:
+  - name: http-api
+    port: 8080
+    targetPort: http-api
+    protocol: TCP
+    nodePort: 30080

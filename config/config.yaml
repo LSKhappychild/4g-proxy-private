@@ -1,0 +1,79 @@
+# 4G LTE Proxy Configuration
+
+# Proxy settings
+proxy:
+  # Listen address for eNB connections
+  listenAddress: "0.0.0.0"
+  listenPort: 36412
+
+  # SCTP settings
+  sctpInitMsgMaxInStreams: 2
+  sctpInitMsgMaxOutStreams: 2
+
+# MME backend settings
+mme:
+  # MME address and port
+  address: "127.0.0.1"
+  port: 36412
+
+# HTTP API settings
+api:
+  # Enable HTTP API
+  enabled: true
+
+  # Listen address and port
+  address: "0.0.0.0"
+  port: 8080
+
+# Logging settings
+logging:
+  # Log level: debug, info, warn, error
+  level: "info"
+
+  # Log S1AP messages
+  logS1AP: true
+
+  # Log NAS messages
+  logNAS: true
+
+  # Verbose mode
+  verbose: false
+
+# Delay settings (in milliseconds)
+# Set to 0 to disable delay for a message type
+delay:
+  # Attach procedure delays
+  attach: 0
+
+  # Detach procedure delays
+  detach: 0
+
+  # Tracking Area Update delays
+  tau: 0
+
+  # Service Request delays
+  serviceRequest: 0
+
+  # UE Context Release delays
+  ueContextRelease: 0
+
+  # PDN Connectivity delays
+  pdnConnectivity: 0
+
+  # Handover delays (general)
+  handover: 0
+
+  # Handover-specific delays (take precedence over 'handover' for these message types)
+  # HandoverRequired: Source eNB -> MME (initiates S1 handover)
+  handoverRequired: 0
+  # HandoverNotify: Target eNB -> MME (UE has arrived at target cell)
+  handoverNotify: 0
+
+  # Reset delays
+  reset: 0
+
+  # Paging delays
+  paging: 0
+
+  # Default delay for unspecified message types
+  default: 0

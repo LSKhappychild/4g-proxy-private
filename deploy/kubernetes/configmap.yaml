@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s1ap-proxy-config
+  namespace: s1ap-proxy
+  labels:
+    app.kubernetes.io/name: s1ap-proxy
+data:
+  # MME Backend Configuration
+  MME_ADDRESS: "mme-service.lte-core.svc.cluster.local"
+  MME_PORT: "36412"
+
+  # API Configuration
+  API_ENABLED: "true"
+  API_PORT: "8080"
+
+  # Delay Configuration (in milliseconds)
+  # Set to "0" to disable delay for a message type
+  DELAY_ATTACH_MS: "0"
+  DELAY_DETACH_MS: "0"
+  DELAY_TAU_MS: "0"
+  DELAY_SERVICE_REQUEST_MS: "0"
+  DELAY_UE_CONTEXT_RELEASE_MS: "0"
+  DELAY_PDN_CONNECTIVITY_MS: "0"
+  DELAY_HANDOVER_MS: "0"
+  # Handover-specific delays (take precedence over DELAY_HANDOVER_MS)
+  DELAY_HANDOVER_REQUIRED_MS: "0"  # Source eNB -> MME (initiates handover)
+  DELAY_HANDOVER_NOTIFY_MS: "0"    # Target eNB -> MME (UE arrived at target)
+  DELAY_RESET_MS: "0"
+  DELAY_PAGING_MS: "0"
+  DELAY_DEFAULT_MS: "0"
